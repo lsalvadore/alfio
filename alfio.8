@@ -1,0 +1,49 @@
+.TH Alfio 8 "January 19, 2020" "0.3"
+
+.SH NAME
+.B Alfio
+.R - an rc service for managing services at boot time through profiles.
+.SH DESCRIPTION
+Alfio is an rc service for managing services at boot time. It is specifically designed for FreeBSD, but it might work on any other system using rc.
+.sp
+.RB "To check that Alfio works properly, run " "service -e" " and check that Alfio is the first service to run, or at least that it is the first service to run after the filesystem where Alfio is installed is mounted. If it is not, manually modify the " "BEFORE:" " line of the script to fix it (unless your system really needs to run some service before Alfio)."
+.sp
+.RB "Then you need to configure Alfio properly. This is done by putting into your " "/etc/rc.conf"  " file all the configurations that is common to all profiles you want to set. "
+.sp
+.B Warning: you must not use the /etc/rc.d directory to configure your services: Alfio will replace this directory by a soft link to your Alfio profile. If you want to use rc.d for some configuration common to all Alfio profiles, then you will need to repeat it for each Alfio profile as described later. However, the lines needed to mount the filesystem where Alfio is installed must still be present into /etc/rc.conf.
+.sp
+.RB "Create the directory " "%%LOCALBASE%%/etc/alfio" " and create a directory for each Alfio profile you need, named as you would like to see it listed in the Alfio menu when system starts. Put in there all the files you need as you would do with the " "/etc/rc.conf.d" " directory, excluding what you already put in /etc/rc.conf."
+.sp
+.RB "Finally, configure the Alfio service itself: put in your " "/etc/rc.conf" " the following lines:
+.sp
+.RS
+alfio_enable="yes"
+.br
+alfio_profiles=<list of profiles you want to enable, named as their corresponding directory in %%LOCALBASE%%/etc/alfio, in the same order you want them to be listed at boot time>
+.sp
+.br
+.RE
+.RB "If " "alfio_profiles" " is not defined it will assume a " "default" " profile exists and will search for it in %%LOCALBASE%%/etc/alfio. If the directory does not exist, Alfio will report an error and will try last used Alfio profile (i.e. it will not touch /etc/rc.conf.d)."
+.br
+You can optionally define the following variable:
+.sp
+.RS
+.RB "alfio_timeout=<time to wait before activating profile number 1 by default, in the same syntax used by " "timeout" ">"
+.RE
+.sp
+.RB "If not defined " "alfio_timeout" " defaults to 5 seconds."
+.SH WEB
+.B https://github.com/lsalvadore/alfio
+.RS
+Alfio's website. There you can download the sources, send bugs, request new features, contact the author.
+.RE
+.SH COPYRIGHT
+Copyright (c) 2019-2020 Lorenzo Salvadore <salvadore@FreeBSD.org>
+.br
+All rights reserved.
+.br
+Redistribution and use in source and binary forms are permitted under the terms of the BSD-2 clauses license.
+.SH AUTHOR
+The author of this sofware is Lorenzo Salvadore. You can contact him at salvadore@FreeBSD.org.
+.PP
+Thank you for using Alfio.

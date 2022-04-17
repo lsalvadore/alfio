@@ -1,0 +1,84 @@
+#!/bin/sh
+
+# Copyright (c) 2019-2020 Lorenzo Salvadore <salvadore@FreeBSD.org>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+# PROVIDE: alfio
+# BEFORE: growfs
+
+. /etc/rc.subr
+
+name="alfio"
+desc="Manages services at boot time"
+rcvar=alfio_enable
+
+start_cmd="${name}_start"
+
+alfio_profiles="$(echo ${alfio_profiles} | cut -f -123 -w)"
+test -n "${alfio_profiles}" || alfio_profiles="default"
+(test -n "$(echo "${alfio_timeout}" | tr -d "0123456789")" && test -n "${alfio_timeout}") || alfio_timeout=5
+
+alfio_start()
+{
+	echo
+	echo "=================================================="
+	echo "=========== Alfio --- Services manager ==========="
+	echo "=================================================="
+	echo
+	echo "Please select a profile:"
+	echo
+	num=1
+	for x in ${alfio_profiles}
+	do
+		echo "${num}. $x"
+		num=$((${num} + 1));
+	done
+	echo
+	timeout ${alfio_timeout} sh -c "
+	profile_num=${num}
+	while test -z \"$(echo \"\${profile_num}\" | tr -d \"0123456789\")\" || test \${profile_num} -ge ${num}
+	do
+		read -p 'Insert a valid profile number: ' profile_num
+	done
+	exit \${profile_num}"
+	profile_num=$?
+	if test ${profile_num} -ge ${num}
+	then
+		echo
+		echo "Timeout. Defaults to profile 1."
+		profile_num=1
+	fi
+	profile="$(echo ${alfio_profiles} | cut -f ${profile_num} -d ' ')"
+	if test -e "%%LOCALBASE%%/etc/${name}/${profile}"
+	then
+		ln -Fs %%LOCALBASE%%/etc/${name}/${profile} /etc/rc.conf.d
+	else
+		echo "Error: selected profile does not exists." >&2
+		echo "Using last set profile: this can fail if it has been removed since last successful boot." >&2
+		exit 1
+	fi
+}
+
+load_rc_config $name
+run_rc_command "$1"
